@@ -27,7 +27,18 @@ python3 organize.py ~/Desktop --apply
 
 # 按「年-月」分类，而不是按类型
 python3 organize.py --by-date --apply
+
+# 一键撤销最近一次整理（万一分错了，秒回原样）
+python3 organize.py --revert
+
+# 保留指定文件不动（支持通配符）
+python3 organize.py --keep "*.tmp" --keep "重要*.pdf" --apply
 ```
+
+## 🆕 支持的分类
+
+图片、文档、电子书、视频、音频、字体、设计稿、压缩包、安装包、代码、种子、其他。
+想加新类型？打开 `organize.py`，在最上面的 `CATEGORIES` 字典里加扩展名即可。
 
 ## 📺 运行效果示例
 
