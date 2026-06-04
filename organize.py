@@ -29,15 +29,19 @@ from pathlib import Path
 # 扩展名 → 分类。想加新类型，直接往这里加就行。
 # ---------------------------------------------------------------------------
 CATEGORIES = {
-    "图片": [".jpg", ".jpeg", ".png", ".gif", ".bmp", ".webp", ".heic", ".svg", ".tiff"],
+    "图片": [".jpg", ".jpeg", ".png", ".gif", ".bmp", ".webp", ".heic", ".svg", ".tiff", ".raw", ".cr2", ".nef"],
     "文档": [".pdf", ".doc", ".docx", ".xls", ".xlsx", ".ppt", ".pptx",
              ".txt", ".md", ".csv", ".rtf", ".odt", ".pages", ".key", ".numbers"],
+    "电子书": [".epub", ".mobi", ".azw", ".azw3", ".djvu", ".fb2"],
     "视频": [".mp4", ".mov", ".avi", ".mkv", ".flv", ".wmv", ".webm", ".m4v"],
-    "音频": [".mp3", ".wav", ".flac", ".aac", ".m4a", ".ogg", ".wma"],
+    "音频": [".mp3", ".wav", ".flac", ".aac", ".m4a", ".ogg", ".wma", ".opus"],
+    "字体": [".ttf", ".otf", ".woff", ".woff2", ".eot"],
+    "设计": [".psd", ".ai", ".sketch", ".fig", ".xd", ".indd"],
     "压缩包": [".zip", ".rar", ".7z", ".tar", ".gz", ".bz2", ".dmg", ".iso"],
     "安装包": [".pkg", ".exe", ".msi", ".deb", ".rpm", ".app", ".apk"],
-    "代码": [".py", ".js", ".ts", ".html", ".css", ".json", ".java", ".c", ".cpp",
-             ".go", ".rs", ".rb", ".php", ".sh", ".sql"],
+    "代码": [".py", ".js", ".ts", ".tsx", ".jsx", ".html", ".css", ".scss", ".json", ".yaml", ".yml",
+             ".java", ".c", ".cpp", ".h", ".go", ".rs", ".rb", ".php", ".sh", ".sql", ".swift", ".kt"],
+    "种子": [".torrent"],
 }
 OTHER_FOLDER = "其他"  # 没匹配到的文件丢这里
 
