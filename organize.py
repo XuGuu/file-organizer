@@ -21,9 +21,14 @@
 """
 
 import argparse
+import json
 import shutil
 from datetime import datetime
 from pathlib import Path
+
+# 每次实际执行整理后，把"原路径 → 新路径"的对应关系记录到这里。
+# --revert 时读这个日志，把每个文件搬回去。
+LOG_FILENAME = ".organize_log.json"
 
 # ---------------------------------------------------------------------------
 # 扩展名 → 分类。想加新类型，直接往这里加就行。
@@ -92,6 +97,7 @@ def organize(folder: Path, apply: bool, by_date: bool) -> None:
 
     moved = 0
     summary: dict[str, int] = {}
+    operations: list[tuple[str, str]] = []  # 真正执行时，记录 (原路径, 新路径)
 
     for f in files:
         if by_date:
@@ -110,14 +116,55 @@ def organize(folder: Path, apply: bool, by_date: bool) -> None:
         if apply:
             dest_dir.mkdir(exist_ok=True)
             shutil.move(str(f), str(dest))
+            operations.append((str(f), str(dest)))
         moved += 1
 
     print("-" * 56)
     print("统计：" + "，".join(f"{k} {v} 个" for k, v in sorted(summary.items())))
     if apply:
+        # 把这一次操作记下来，方便 --revert 撤销
+        log_path = folder / LOG_FILENAME
+        log_data = {"at": datetime.now().isoformat(timespec="seconds"), "ops": operations}
+        log_path.write_text(json.dumps(log_data, ensure_ascii=False, indent=2))
         print(f"🎉 完成！共整理 {moved} 个文件。")
+        print(f"💡 如需撤销：python3 organize.py {folder} --revert")
     else:
         print(f"以上是预演结果（共 {moved} 个文件）。确认无误后，加 --apply 真正执行。")
+
+
+def revert(folder: Path) -> None:
+    """读取上次整理的日志，把文件搬回原路径。"""
+    log_path = folder / LOG_FILENAME
+    if not log_path.exists():
+        print(f"❌ 找不到操作日志：{log_path}")
+        print("    （只能撤销最近一次用 --apply 整理过的文件夹。）")
+        return
+    log_data = json.loads(log_path.read_text())
+    ops = log_data.get("ops", [])
+    if not ops:
+        print("日志里没有可撤销的操作。")
+        return
+
+    print(f"\n准备撤销 {len(ops)} 个文件的移动（来自 {log_data.get('at', '?')}）：")
+    print("-" * 56)
+    restored, missing = 0, 0
+    for original, current in ops:
+        cur_path = Path(current)
+        orig_path = Path(original)
+        if not cur_path.exists():
+            print(f"  ⚠ 已不在原位置，跳过：{cur_path.name}")
+            missing += 1
+            continue
+        # 如果原路径有同名文件了，加 _restored 后缀，避免覆盖
+        if orig_path.exists():
+            orig_path = orig_path.with_name(orig_path.stem + "_restored" + orig_path.suffix)
+        orig_path.parent.mkdir(parents=True, exist_ok=True)
+        shutil.move(str(cur_path), str(orig_path))
+        print(f"  {cur_path.name}  ←  {orig_path}")
+        restored += 1
+    print("-" * 56)
+    print(f"✅ 已撤销 {restored} 个文件；{missing} 个文件已不在原位置无法处理。")
+    log_path.unlink()  # 日志用完就删，避免重复撤销
 
 
 def main():
@@ -136,9 +183,17 @@ def main():
         "--by-date", action="store_true",
         help="按文件修改日期(年-月)分类，而不是按文件类型",
     )
+    parser.add_argument(
+        "--revert", action="store_true",
+        help="撤销该文件夹最近一次整理（读取 .organize_log.json 还原）",
+    )
     args = parser.parse_args()
 
-    organize(Path(args.folder).expanduser(), apply=args.apply, by_date=args.by_date)
+    folder = Path(args.folder).expanduser()
+    if args.revert:
+        revert(folder)
+    else:
+        organize(folder, apply=args.apply, by_date=args.by_date)
 
 
 if __name__ == "__main__":
