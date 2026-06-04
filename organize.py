@@ -21,6 +21,7 @@
 """
 
 import argparse
+import fnmatch
 import json
 import shutil
 from datetime import datetime
@@ -74,7 +75,7 @@ def unique_destination(dest_dir: Path, filename: str) -> Path:
         i += 1
 
 
-def organize(folder: Path, apply: bool, by_date: bool) -> None:
+def organize(folder: Path, apply: bool, by_date: bool, keep_patterns: list[str] | None = None) -> None:
     if not folder.exists() or not folder.is_dir():
         print(f"❌ 找不到文件夹：{folder}")
         return
@@ -84,6 +85,14 @@ def organize(folder: Path, apply: bool, by_date: bool) -> None:
         p for p in folder.iterdir()
         if p.is_file() and not p.name.startswith(".") and p.resolve() != Path(__file__).resolve()
     ]
+
+    # 按 --keep 模式排除（支持通配符，如 "*.tmp" 或 "重要*.pdf"）
+    if keep_patterns:
+        before = len(files)
+        files = [f for f in files if not any(fnmatch.fnmatch(f.name, p) for p in keep_patterns)]
+        skipped = before - len(files)
+        if skipped:
+            print(f"（按 --keep 跳过了 {skipped} 个文件）")
 
     if not files:
         print(f"📂 {folder} 里没有需要整理的文件。")
@@ -187,13 +196,17 @@ def main():
         "--revert", action="store_true",
         help="撤销该文件夹最近一次整理（读取 .organize_log.json 还原）",
     )
+    parser.add_argument(
+        "--keep", action="append", metavar="PATTERN", default=[],
+        help="保留匹配此模式的文件不动，支持通配符。可多次使用，如 --keep '*.tmp' --keep 'README.md'",
+    )
     args = parser.parse_args()
 
     folder = Path(args.folder).expanduser()
     if args.revert:
         revert(folder)
     else:
-        organize(folder, apply=args.apply, by_date=args.by_date)
+        organize(folder, apply=args.apply, by_date=args.by_date, keep_patterns=args.keep)
 
 
 if __name__ == "__main__":
