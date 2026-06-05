@@ -77,7 +77,8 @@ def unique_destination(dest_dir: Path, filename: str) -> Path:
         i += 1
 
 
-def organize(folder: Path, apply: bool, by_date: bool, keep_patterns: list[str] | None = None) -> None:
+def organize(folder: Path, apply: bool, by_date: bool, keep_patterns: list[str] | None = None,
+             quiet: bool = False) -> None:
     if not folder.exists():
         print(f"❌ 路径不存在：{folder}")
         print("    检查一下拼写，或换个绝对路径试试（如 /Users/你的用户名/Downloads）。")
@@ -109,10 +110,11 @@ def organize(folder: Path, apply: bool, by_date: bool, keep_patterns: list[str] 
         return
 
     mode = "✅ 实际执行" if apply else "👀 预演模式（不会真的移动文件，确认后加 --apply 执行）"
-    print(f"\n整理文件夹：{folder}")
-    print(f"模式：{mode}")
-    print(f"分类方式：{'按修改日期(年-月)' if by_date else '按文件类型'}")
-    print("-" * 56)
+    if not quiet:
+        print(f"\n整理文件夹：{folder}")
+        print(f"模式：{mode}")
+        print(f"分类方式：{'按修改日期(年-月)' if by_date else '按文件类型'}")
+        print("-" * 56)
 
     moved = 0
     summary: dict[str, int] = {}
@@ -129,7 +131,8 @@ def organize(folder: Path, apply: bool, by_date: bool, keep_patterns: list[str] 
         dest_dir = folder / bucket
         dest = unique_destination(dest_dir, f.name)
 
-        print(f"  {f.name}  →  {bucket}/{dest.name}")
+        if not quiet:
+            print(f"  {f.name}  →  {bucket}/{dest.name}")
         summary[bucket] = summary.get(bucket, 0) + 1
 
         if apply:
@@ -138,7 +141,8 @@ def organize(folder: Path, apply: bool, by_date: bool, keep_patterns: list[str] 
             operations.append((str(f), str(dest)))
         moved += 1
 
-    print("-" * 56)
+    if not quiet:
+        print("-" * 56)
     print("统计：" + "，".join(f"{k} {v} 个" for k, v in sorted(summary.items())))
     if apply:
         # 把这一次操作记下来，方便 --revert 撤销
@@ -211,13 +215,18 @@ def main():
         "--keep", action="append", metavar="PATTERN", default=[],
         help="保留匹配此模式的文件不动，支持通配符。可多次使用，如 --keep '*.tmp' --keep 'README.md'",
     )
+    parser.add_argument(
+        "-q", "--quiet", action="store_true",
+        help="简洁模式：只打印统计结果，不逐条列出每个文件（移动文件多时清爽很多）",
+    )
     args = parser.parse_args()
 
     folder = Path(args.folder).expanduser()
     if args.revert:
         revert(folder)
     else:
-        organize(folder, apply=args.apply, by_date=args.by_date, keep_patterns=args.keep)
+        organize(folder, apply=args.apply, by_date=args.by_date,
+                 keep_patterns=args.keep, quiet=args.quiet)
 
 
 if __name__ == "__main__":
