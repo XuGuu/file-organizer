@@ -78,8 +78,16 @@ def unique_destination(dest_dir: Path, filename: str) -> Path:
 
 
 def organize(folder: Path, apply: bool, by_date: bool, keep_patterns: list[str] | None = None) -> None:
-    if not folder.exists() or not folder.is_dir():
-        print(f"❌ 找不到文件夹：{folder}")
+    if not folder.exists():
+        print(f"❌ 路径不存在：{folder}")
+        print("    检查一下拼写，或换个绝对路径试试（如 /Users/你的用户名/Downloads）。")
+        return
+    if folder.is_file():
+        print(f"❌ 这是一个文件，不是文件夹：{folder}")
+        print(f"    你大概想整理它所在的目录：{folder.parent}")
+        return
+    if not folder.is_dir():
+        print(f"❌ 这不是一个普通文件夹：{folder}")
         return
 
     # 收集要处理的文件：只取直接位于该文件夹里的文件，跳过隐藏文件和本脚本自己
