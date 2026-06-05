@@ -62,6 +62,10 @@ python3 organize.py --keep "*.tmp" --keep "重要*.pdf" --apply
 - 想增加新的文件类型？打开 `organize.py`，在最上面的 `CATEGORIES` 字典里加扩展名即可。
 - 安全设计：预演模式是默认行为，必须显式加 `--apply` 才会真正移动文件。
 
+## 📜 更新日志
+
+详见 [CHANGELOG.md](CHANGELOG.md)。
+
 ## 📄 许可证
 
 MIT
