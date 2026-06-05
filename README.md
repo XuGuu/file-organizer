@@ -1,5 +1,8 @@
 # 🗂 文件整理工具 File Organizer
 
+[![测试](https://github.com/XuGuu/file-organizer/actions/workflows/test.yml/badge.svg)](https://github.com/XuGuu/file-organizer/actions/workflows/test.yml)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
+
 一个小巧的命令行工具，把乱糟糟的文件夹（默认是「下载」文件夹）里的文件，
 按类型自动分到子文件夹：图片、文档、视频、音频、压缩包、安装包、代码、其他。
 
@@ -61,6 +64,14 @@ python3 organize.py --keep "*.tmp" --keep "重要*.pdf" --apply
 - 用 Python 标准库 `pathlib` 和 `shutil`，无需安装任何第三方包。
 - 想增加新的文件类型？打开 `organize.py`，在最上面的 `CATEGORIES` 字典里加扩展名即可。
 - 安全设计：预演模式是默认行为，必须显式加 `--apply` 才会真正移动文件。
+
+## 🧪 跑测试
+
+```bash
+python3 -m unittest test_organize.py -v
+```
+
+GitHub Actions 会在每次 push 自动跑测试，结果显示在仓库顶部的徽章里。
 
 ## 📜 更新日志
 
