@@ -36,6 +36,12 @@ python3 organize.py --revert
 
 # 保留指定文件不动（支持通配符）
 python3 organize.py --keep "*.tmp" --keep "重要*.pdf" --apply
+
+# 递归整理子文件夹（自动避免循环）
+python3 organize.py --depth 1 --apply
+
+# 简洁模式（移动大量文件不刷屏）
+python3 organize.py --quiet --apply
 ```
 
 ## 🆕 支持的分类
