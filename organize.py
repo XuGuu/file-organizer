@@ -27,6 +27,8 @@ import shutil
 from datetime import datetime
 from pathlib import Path
 
+__version__ = "1.1.0"
+
 # 每次实际执行整理后，把"原路径 → 新路径"的对应关系记录到这里。
 # --revert 时读这个日志，把每个文件搬回去。
 LOG_FILENAME = ".organize_log.json"
@@ -180,6 +182,7 @@ def main():
     parser = argparse.ArgumentParser(
         description="把文件夹里的文件按类型（或日期）自动分到子文件夹。默认只预演不动文件。"
     )
+    parser.add_argument("--version", action="version", version=f"organize.py {__version__}")
     parser.add_argument(
         "folder", nargs="?", default=str(Path.home() / "Downloads"),
         help="要整理的文件夹路径（默认：你的'下载'文件夹 ~/Downloads）",
