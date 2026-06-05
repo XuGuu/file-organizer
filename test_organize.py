@@ -125,5 +125,44 @@ class TestOrganizeAndRevert(unittest.TestCase):
         self.assertTrue((self.tmp / "图片" / "a.jpg").exists())
 
 
+class TestCollectFiles(unittest.TestCase):
+    """collect_files：默认只取顶层；--depth N 多扫 N 层；自动跳过分类文件夹与隐藏文件。"""
+
+    def setUp(self):
+        self.tmp = Path(tempfile.mkdtemp())
+        (self.tmp / "top.jpg").touch()
+        (self.tmp / "sub").mkdir(); (self.tmp / "sub" / "in_sub.pdf").touch()
+        (self.tmp / "sub" / "deeper").mkdir(); (self.tmp / "sub" / "deeper" / "deep.mp3").touch()
+        (self.tmp / ".hidden.txt").touch()
+        # 模拟「分类文件夹」（递归时应跳过，否则会循环）
+        (self.tmp / "图片").mkdir(); (self.tmp / "图片" / "old.jpg").touch()
+
+    def tearDown(self):
+        shutil.rmtree(self.tmp)
+
+    def test_depth_0_only_top_level(self):
+        names = {p.name for p in organize.collect_files(self.tmp, depth=0)}
+        self.assertEqual(names, {"top.jpg"})
+
+    def test_depth_1_includes_one_subfolder(self):
+        names = {p.name for p in organize.collect_files(self.tmp, depth=1)}
+        self.assertEqual(names, {"top.jpg", "in_sub.pdf"})
+        # 还没深到 deeper
+        self.assertNotIn("deep.mp3", names)
+
+    def test_depth_2_includes_deeper(self):
+        names = {p.name for p in organize.collect_files(self.tmp, depth=2)}
+        self.assertIn("deep.mp3", names)
+
+    def test_skips_reserved_category_folders(self):
+        # 即便 depth 很大，分类文件夹（如「图片」）里的旧文件也不应被收进来重新移动
+        names = {p.name for p in organize.collect_files(self.tmp, depth=99)}
+        self.assertNotIn("old.jpg", names)
+
+    def test_skips_hidden(self):
+        names = {p.name for p in organize.collect_files(self.tmp, depth=0)}
+        self.assertNotIn(".hidden.txt", names)
+
+
 if __name__ == "__main__":
     unittest.main(verbosity=2)

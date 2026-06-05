@@ -27,7 +27,11 @@ import shutil
 from datetime import datetime
 from pathlib import Path
 
-__version__ = "1.1.0"
+__version__ = "1.2.0"
+
+# 这些名字是 organize 自己生成的分类文件夹，递归时要跳过，否则会循环嵌套
+RESERVED_FOLDERS = {"图片", "文档", "电子书", "视频", "音频", "字体", "设计",
+                    "压缩包", "安装包", "代码", "种子", "其他"}
 
 # 每次实际执行整理后，把"原路径 → 新路径"的对应关系记录到这里。
 # --revert 时读这个日志，把每个文件搬回去。
@@ -77,8 +81,28 @@ def unique_destination(dest_dir: Path, filename: str) -> Path:
         i += 1
 
 
+def collect_files(folder: Path, depth: int) -> list[Path]:
+    """收集文件。depth=0 表示只取 folder 顶层；depth=1 多扫一层子文件夹；以此类推。
+    跳过隐藏文件、本脚本、以及上次整理生成的分类文件夹（防止重复嵌套）。"""
+    me = Path(__file__).resolve()
+    files: list[Path] = []
+
+    def walk(d: Path, remaining: int):
+        for p in d.iterdir():
+            if p.name.startswith("."):       # 隐藏文件 / 文件夹一律跳过
+                continue
+            if p.is_file():
+                if p.resolve() != me:
+                    files.append(p)
+            elif p.is_dir() and remaining > 0 and p.name not in RESERVED_FOLDERS:
+                walk(p, remaining - 1)
+
+    walk(folder, depth)
+    return files
+
+
 def organize(folder: Path, apply: bool, by_date: bool, keep_patterns: list[str] | None = None,
-             quiet: bool = False) -> None:
+             quiet: bool = False, depth: int = 0) -> None:
     if not folder.exists():
         print(f"❌ 路径不存在：{folder}")
         print("    检查一下拼写，或换个绝对路径试试（如 /Users/你的用户名/Downloads）。")
@@ -91,11 +115,8 @@ def organize(folder: Path, apply: bool, by_date: bool, keep_patterns: list[str] 
         print(f"❌ 这不是一个普通文件夹：{folder}")
         return
 
-    # 收集要处理的文件：只取直接位于该文件夹里的文件，跳过隐藏文件和本脚本自己
-    files = [
-        p for p in folder.iterdir()
-        if p.is_file() and not p.name.startswith(".") and p.resolve() != Path(__file__).resolve()
-    ]
+    # 收集要处理的文件
+    files = collect_files(folder, depth)
 
     # 按 --keep 模式排除（支持通配符，如 "*.tmp" 或 "重要*.pdf"）
     if keep_patterns:
@@ -219,6 +240,10 @@ def main():
         "-q", "--quiet", action="store_true",
         help="简洁模式：只打印统计结果，不逐条列出每个文件（移动文件多时清爽很多）",
     )
+    parser.add_argument(
+        "--depth", type=int, default=0, metavar="N",
+        help="递归深度：0=只整理顶层（默认），1=多扫一层子文件夹，依此类推。会跳过已有的分类文件夹避免循环。",
+    )
     args = parser.parse_args()
 
     folder = Path(args.folder).expanduser()
@@ -226,7 +251,7 @@ def main():
         revert(folder)
     else:
         organize(folder, apply=args.apply, by_date=args.by_date,
-                 keep_patterns=args.keep, quiet=args.quiet)
+                 keep_patterns=args.keep, quiet=args.quiet, depth=args.depth)
 
 
 if __name__ == "__main__":
