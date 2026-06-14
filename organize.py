@@ -32,7 +32,7 @@ import shutil
 from datetime import datetime
 from pathlib import Path
 
-__version__ = "1.2.0"
+__version__ = "1.2.1"
 
 # 这些名字是 organize 自己生成的分类文件夹，递归时要跳过，否则会循环嵌套
 RESERVED_FOLDERS = {"图片", "文档", "电子书", "视频", "音频", "字体", "设计",
