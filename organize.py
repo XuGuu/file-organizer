@@ -4,21 +4,26 @@
 文件夹整理工具 (File Organizer)
 ================================
 把一个乱糟糟的文件夹（默认是"下载"文件夹）里的文件，按类型自动分到子文件夹里：
-图片、文档、视频、音频、压缩包、程序安装包、代码、其他。
+图片、文档、电子书、视频、音频、字体、设计、压缩包、安装包、代码、种子、其他。
 
 特点：
 - 默认"预演模式"（dry-run）：只打印会怎么移动，不真的动文件，安全。确认没问题再加 --apply 真正执行。
 - 遇到重名文件会自动改名（加 _1、_2…），不会覆盖你的东西。
-- 只整理文件，不动子文件夹。
+- 默认只整理顶层文件；想连子文件夹一起整理用 --depth N。
+- 可用 --revert 一键撤销上次整理，用 --keep 保留指定文件不动。
 - 不联网、不删除任何文件，只是"搬家"。
 
 用法示例：
     python3 organize.py                      # 预演整理"下载"文件夹（只看不动）
     python3 organize.py --apply              # 真正整理"下载"文件夹
-    python3 organize.py ~/Desktop            # 预演整理桌面
-    python3 organize.py ~/Desktop --apply    # 真正整理桌面
-    python3 organize.py --by-date            # 按"年-月"分文件夹，而不是按类型
+    python3 organize.py ~/Desktop --apply    # 整理桌面
+    python3 organize.py --by-date --apply    # 按"年-月"分文件夹，而不是按类型
+    python3 organize.py --depth 1 --apply    # 连子文件夹一起整理（递归一层）
+    python3 organize.py --keep '*.tmp' --apply  # 保留 .tmp 文件不动
+    python3 organize.py --revert             # 撤销最近一次整理
 """
+
+from __future__ import annotations  # 让类型注解延迟求值，兼容 Python 3.7+（含老 Mac 自带的 3.8/3.9）
 
 import argparse
 import fnmatch
@@ -183,7 +188,11 @@ def revert(folder: Path) -> None:
         print(f"❌ 找不到操作日志：{log_path}")
         print("    （只能撤销最近一次用 --apply 整理过的文件夹。）")
         return
-    log_data = json.loads(log_path.read_text())
+    try:
+        log_data = json.loads(log_path.read_text())
+    except (json.JSONDecodeError, OSError) as err:
+        print(f"❌ 操作日志已损坏，无法撤销：{err}")
+        return
     ops = log_data.get("ops", [])
     if not ops:
         print("日志里没有可撤销的操作。")
